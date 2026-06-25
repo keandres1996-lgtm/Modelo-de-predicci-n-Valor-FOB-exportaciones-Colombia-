@@ -1,230 +1,142 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import requests
 from datetime import date
 
-# =====================================================
-# CONFIGURACIÓN DE LA PÁGINA
-# =====================================================
+# ==========================
+# CONFIGURACIÓN DE PÁGINA
+# ==========================
 
 st.set_page_config(
-    page_title="Predicción Inteligente de Exportaciones Agrícolas",
+    page_title="Modelo de Predicción Valor FOB Exportaciones Agrícolas Colombianas",
     page_icon="🌎",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# =====================================================
-# PALETA CORPORATIVA
-# =====================================================
+# ==========================
+# ESTILOS
+# ==========================
 
 st.markdown("""
 <style>
 
-html, body, [class*="css"] {
-    font-family: 'Segoe UI', sans-serif;
+.main {
+    background-color: #F5F7FA;
 }
 
-.main{
-    background:#F3F6FA;
+h1 {
+    color: #0F4C81;
 }
 
-.block-container{
-    padding-top:1rem;
-    padding-bottom:1rem;
-    padding-left:2rem;
-    padding-right:2rem;
+h2, h3 {
+    color: #2E7D32;
 }
 
-h1{
-    color:#0F4C81;
-    font-weight:700;
+.block-container {
+    padding-top: 1rem;
 }
 
-h2,h3{
-    color:#1B5E20;
+.metric-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 5px solid #0F4C81;
 }
 
-section[data-testid="stSidebar"]{
-    background:#0F2D52;
+.stButton > button {
+    background-color: #0F4C81;
+    color: white;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    height: 3.5em;
+    width: 100%;
 }
 
-section[data-testid="stSidebar"] *{
-    color:white;
+.stButton > button:hover {
+    background-color: #0A365A;
+    color: white;
 }
 
-.stButton>button{
-    width:100%;
-    height:55px;
-    border-radius:12px;
-    border:none;
-    background:#0F4C81;
-    color:white;
-    font-size:18px;
-    font-weight:bold;
-}
-
-.stButton>button:hover{
-    background:#1565C0;
-    color:white;
-}
-
-div[data-testid="metric-container"]{
-
-    background:white;
-
-    border-radius:15px;
-
-    padding:20px;
-
-    border-left:8px solid #2E7D32;
-
-    box-shadow:0px 3px 12px rgba(0,0,0,.08);
-
-}
-
-div[data-testid="stSelectbox"]{
-
-    background:white;
-
-    border-radius:10px;
-
-}
-
-div[data-testid="stNumberInput"]{
-
-    background:white;
-
-    border-radius:10px;
-
-}
-
-div[data-testid="stDateInput"]{
-
-    background:white;
-
-    border-radius:10px;
-
-}
-
-.footer{
-
-    text-align:center;
-
-    color:gray;
-
-    margin-top:40px;
-
+.readonly-box {
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #F1F5F9;
+    border: 1px solid #D1D5DB;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# =====================================================
-# CARGAR BASE
-# =====================================================
+# ==========================
+# CARGAR DATASET
+# ==========================
 
 @st.cache_data
 def cargar_datos():
-
-    df = pd.read_csv("fecha_exportaciones_agricolas.csv")
-
-    df["Fecha"] = pd.to_datetime(df["Fecha"])
-
-    return df
+    return pd.read_csv("fecha_exportaciones_agricolas.csv")
 
 df = cargar_datos()
 
-# =====================================================
-# CATÁLOGOS
-# =====================================================
+# ==========================
+# CATÁLOGOS DINÁMICOS
+# ==========================
 
 productos = sorted(
     df["Producto _(MADR_OAI)"]
     .dropna()
+    .astype(str)
     .unique()
 )
 
 paises = sorted(
     df["Pais"]
     .dropna()
+    .astype(str)
     .unique()
 )
 
 departamentos = sorted(
     df["Descripción Departamento"]
     .dropna()
+    .astype(str)
     .unique()
 )
 
-# =====================================================
-# CONFIGURACIÓN DATAROBOT
-# =====================================================
+# ==========================
+# CONEXIÓN DATAROBOT
+# ==========================
 
 API_KEY = st.secrets["DATAROBOT_API_KEY"]
-
 DEPLOYMENT_ID = st.secrets["DATAROBOT_DEPLOYMENT_ID"]
+ENDPOINT = st.secrets["DATAROBOT_ENDPOINT"]
 
-URL_PREDICCION = (
-    f"https://app.datarobot.com/api/v2/deployments/"
-    f"{DEPLOYMENT_ID}/predictions"
-)
 
-HEADERS = {
-
-    "Authorization": f"Bearer {API_KEY}",
-
-    "Content-Type":"text/csv; charset=UTF-8",
-
-    "Accept":"text/csv"
-
-}
-
-# =====================================================
+# ==========================
 # ENCABEZADO
-# =====================================================
+# ==========================
 
-st.title("🌎 Predicción Inteligente de Exportaciones Agrícolas Colombianas")
+st.title("🌱 Predicción Inteligente de Exportaciones Agrícolas")
 
 st.markdown("""
+Sistema de análisis predictivo para estimar el **Valor FOB Exportado**
+utilizando inteligencia artificial y modelos de Machine Learning desarrollados en DataRobot.
 
-Sistema desarrollado mediante **Machine Learning** para estimar el
-
-**Valor FOB de las exportaciones agrícolas colombianas**.
-
----
-
-**Sectores incluidos**
-
-🌱 Agroindustria
-
-🚜 Producción agrícola
-
-🚢 Comercio exterior
-
-📦 Exportaciones
-
-📈 Analítica predictiva
-
+🌍 Comercio Exterior | 🚢 Exportaciones | 📦 Logística | 📈 Analítica Predictiva
 """)
 
 st.divider()
-# =====================================================
-# PANEL LATERAL
-# =====================================================
 
-with st.sidebar:
+# ==========================
+# FORMULARIO
+# ==========================
 
-    st.image(
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Empty.png/1px-Empty.png",
-        width=1
-    )
+col1, col2 = st.columns(2)
 
-    st.markdown("## ⚙️ Parámetros de Predicción")
+with col1:
 
     producto = st.selectbox(
-        "🌱 Producto",
+        "📦 Producto",
         productos
     )
 
@@ -234,9 +146,11 @@ with st.sidebar:
     )
 
     departamento = st.selectbox(
-        "🏢 Departamento origen",
+        "🏢 Departamento",
         departamentos
     )
+
+with col2:
 
     toneladas = st.number_input(
         "🚚 Toneladas Netas Exportadas",
@@ -245,491 +159,159 @@ with st.sidebar:
         step=1.0
     )
 
-    col_mes, col_anio = st.columns(2)
-
-    with col_mes:
-
-        mes = st.selectbox(
-            "Mes",
-            list(range(1,13)),
-            index=date.today().month-1
-        )
-
-    with col_anio:
-
-        anio = st.selectbox(
-            "Año",
-            list(range(2026,2036)),
-            index=0
-        )
-
-    moneda = st.radio(
-        "💰 Mostrar resultado en",
-        [
-            "USD",
-            "COP"
-        ],
-        horizontal=True
+    fecha = st.date_input(
+        "📅 Fecha estimada",
+        value=date.today()
     )
 
-# =====================================================
-# OBTENER INFORMACIÓN DEL PRODUCTO
-# =====================================================
+# ==========================
+# TRADICIÓN AUTOMÁTICA
+# ==========================
 
-registro = df[
-    df["Producto _(MADR_OAI)"] == producto
-]
-
-# Tipo de bien
-
-if "Tradición productos" in df.columns:
-
-    tradicion = registro["Tradición productos"].mode()
-
-    if len(tradicion):
-
-        tradicion = tradicion.iloc[0]
-
-    else:
-
-        tradicion = "No disponible"
-
-else:
-
-    tradicion = "No disponible"
-
-# Partida Arancelaria
-
-nombre_partida = None
-
-for columna in df.columns:
-
-    texto = columna.lower()
-
-    if (
-        "partida" in texto
-        or "arancel" in texto
-        or "subpartida" in texto
-        or "nandina" in texto
-    ):
-
-        nombre_partida = columna
-
-        break
-
-if nombre_partida:
-
-    partida = registro[nombre_partida].mode()
-
-    if len(partida):
-
-        partida = partida.iloc[0]
-
-    else:
-
-        partida = "No disponible"
-
-else:
-
-    partida = "No disponible"
-
-# Fecha que enviará al modelo
-
-fecha_prediccion = pd.Timestamp(
-    year=anio,
-    month=mes,
-    day=1
+tradicion = (
+    df.loc[
+        df["Producto _(MADR_OAI)"] == producto,
+        "Tradición productos"
+    ]
+    .mode()
 )
 
-# =====================================================
-# TARJETAS INFORMATIVAS
-# =====================================================
+if len(tradicion) > 0:
+    tradicion = tradicion.iloc[0]
+else:
+    tradicion = "No disponible"
 
-st.subheader("📋 Información del Producto")
+st.markdown("### Tipo de Bien")
 
-c1, c2 = st.columns(2)
+st.text_input(
+    "",
+    value=tradicion,
+    disabled=True
+)
 
-with c1:
+# ==========================
+# BOTÓN CENTRADO
+# ==========================
 
-    st.metric(
-        "🏷️ Tipo de Bien",
-        tradicion
-    )
+st.write("")
+
+c1, c2, c3 = st.columns([1,2,1])
 
 with c2:
-
-    st.metric(
-        "📦 Partida Arancelaria",
-        str(partida)
-    )
-
-st.divider()
-
-# =====================================================
-# BOTÓN DE PREDICCIÓN
-# =====================================================
-
-col1, col2, col3 = st.columns([1,2,1])
-
-with col2:
-
     generar = st.button(
-        "📈 GENERAR PREDICCIÓN",
+        "📈 Generar Predicción",
         use_container_width=True
     )
-    # =====================================================
-# PREDICCIÓN CON DATAROBOT
-# =====================================================
+
+# ==========================
+# PREDICCIÓN
+# ==========================
 
 if generar:
 
     try:
 
-        # -----------------------------
-        # Construir registro
-        # -----------------------------
-
         input_df = pd.DataFrame([{
-
-            "Fecha": fecha_prediccion.strftime("%Y-%m-%d"),
-
-            "Producto _(MADR_OAI)": producto,
-
-            "Pais": pais,
-
             "Descripción Departamento": departamento,
-
-            "Ton Netas Expo": toneladas,
-
-            "Tradición productos": tradicion
-
-        }])
-
-        # -----------------------------
-        # Convertir a CSV
-        # -----------------------------
-
-        csv_data = input_df.to_csv(
-            index=False
-        )
-
-        # -----------------------------
-        # Consumir API DataRobot
-        # -----------------------------
-
-        response = requests.post(
-
-            URL_PREDICCION,
-
-            headers=HEADERS,
-
-            data=csv_data.encode("utf-8")
-
-        )
-
-        if response.status_code != 200:
-
-            st.error("DataRobot respondió:")
-
-            st.code(response.text)
-
-            st.stop()
-
-        # -----------------------------
-        # Leer respuesta CSV
-        # -----------------------------
-
-        resultado = pd.read_csv(
-
-            pd.io.common.StringIO(
-                response.text
-            )
-
-        )
-
-        # ------------------------------------
-        # Encontrar automáticamente la columna
-        # de predicción
-        # ------------------------------------
-
-        prediccion = None
-
-        posibles = [
-
-            "prediction",
-
-            "Prediction",
-
-            "Predicted_Value",
-
-            "prediction_value",
-
-            "Predicted",
-
-            "Value"
-
-        ]
-
-        for columna in posibles:
-
-            if columna in resultado.columns:
-
-                prediccion = float(
-
-                    resultado[columna].iloc[0]
-
-                )
-
-                break
-
-        if prediccion is None:
-
-            columnas_numericas = resultado.select_dtypes(
-                include="number"
-            ).columns
-
-            prediccion = float(
-                resultado[columnas_numericas[0]].iloc[0]
-            )
-
-        # ------------------------------------
-        # Conversión a COP
-        # ------------------------------------
-
-        TRM = 4100
-
-        valor_cop = prediccion * TRM
-
-        # ------------------------------------
-        # RESULTADOS
-        # ------------------------------------
-
-        st.success(
-            "Predicción generada correctamente."
-        )
-
-        st.subheader("📈 Resultado de la Predicción")
-
-        c1, c2 = st.columns(2)
-
-        with c1:
-
-            st.metric(
-
-                "💵 Valor FOB (USD)",
-
-                f"USD {prediccion:,.2f}"
-
-            )
-
-        with c2:
-
-            st.metric(
-
-                "🇨🇴 Valor FOB (COP)",
-
-                f"$ {valor_cop:,.0f}"
-
-            )
-
-        st.divider()
-
-        st.subheader("📄 Registro enviado al modelo")
-
-        st.dataframe(
-            input_df,
-            use_container_width=True
-        )
-
-        st.subheader("🤖 Respuesta completa del modelo")
-
-        st.dataframe(
-            resultado,
-            use_container_width=True
-        )
-
-    except Exception as e:
-
-        st.error(e)
-    
-# =====================================================
-# BOTÓN PREDICCIÓN
-# =====================================================
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-col_btn1, col_btn2, col_btn3 = st.columns([1,2,1])
-
-with col_btn2:
-    generar = st.button(
-        "🚀 Generar Predicción",
-        use_container_width=True
-    )
-
-# =====================================================
-# PREDICCIÓN DATAROBOT
-# =====================================================
-
-if generar:
-
-    try:
-
-        fecha_pred = f"{anio}-{mes:02d}-01"
-
-        input_df = pd.DataFrame([{
-            "Producto _(MADR_OAI)": producto,
             "Pais": pais,
-            "Descripción Departamento": departamento,
             "Ton Netas Expo": toneladas,
+            "Producto _(MADR_OAI)": producto,
             "Tradición productos": tradicion,
-            "Fecha": fecha_pred
+            "Fecha": fecha.strftime("%Y-%m-%d")
         }])
+prediccion = 0
 
-        csv_data = input_df.to_csv(index=False)
+st.warning(
+    "Conexión a DataRobot pendiente de configurar."
+)
 
-        headers = {
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type": "text/csv; charset=UTF-8",
-            "Accept": "text/csv"
-        }
+st.metric(
+    label="Valor FOB Estimado",
+    value="USD 0.00"
+)
 
-        url = f"{ENDPOINT}/api/v2/deployments/{DEPLOYMENT_ID}/predictions"
+        st.success("Predicción generada exitosamente")
 
-        response = requests.post(
-            url,
-            headers=headers,
-            data=csv_data.encode("utf-8"),
-            timeout=60
+        st.markdown("## 📈 Resultado")
+
+        st.metric(
+            label="Valor FOB Estimado",
+            value=f"USD {prediccion:,.2f}"
         )
-
-        if response.status_code != 200:
-            st.error(response.text)
-            st.stop()
-
-        resultado = pd.read_csv(io.StringIO(response.text))
-
-        prediccion = float(resultado.iloc[0,0])
-
-        TRM = 4100
-
-        col1,col2 = st.columns(2)
-
-        with col1:
-
-            st.markdown("""
-            <div class="card">
-            <h3>🌍 Valor FOB Estimado</h3>
-            </div>
-            """,unsafe_allow_html=True)
-
-            st.metric(
-                "USD",
-                f"${prediccion:,.2f}"
-            )
-
-        with col2:
-
-            st.markdown("""
-            <div class="card">
-            <h3>💰 Equivalente COP</h3>
-            </div>
-            """,unsafe_allow_html=True)
-
-            st.metric(
-                "COP",
-                f"${prediccion*TRM:,.0f}"
-            )
 
     except Exception as e:
 
-        st.error(e)
+        st.error(
+            f"Error al consultar el modelo: {e}"
+        )
 
-# =====================================================
-# DASHBOARD
-# =====================================================
+# ==========================
+# HISTÓRICOS
+# ==========================
 
 st.divider()
 
-st.subheader("📈 Histórico de Toneladas Exportadas")
+st.subheader("📊 Histórico de Exportaciones")
 
 historico = (
     df.groupby("Fecha")["Ton Netas Expo"]
-      .sum()
-      .reset_index()
+    .sum()
+    .reset_index()
 )
 
-historico["Fecha"] = pd.to_datetime(historico["Fecha"])
+historico["Fecha"] = pd.to_datetime(
+    historico["Fecha"]
+)
 
-historico = historico.sort_values("Fecha")
+historico = historico.sort_values(
+    "Fecha"
+)
 
 st.line_chart(
     historico.set_index("Fecha")
 )
 
-# =====================================================
+# ==========================
 # TOP PRODUCTOS
-# =====================================================
+# ==========================
 
-st.subheader("📦 Top 10 Productos")
+st.subheader("📦 Top 10 Productos Exportados")
 
-top = (
+top_productos = (
     df.groupby("Producto _(MADR_OAI)")["Ton Netas Expo"]
-      .sum()
-      .sort_values(ascending=False)
-      .head(10)
+    .sum()
+    .sort_values(ascending=False)
+    .head(10)
 )
 
-st.bar_chart(top)
+st.bar_chart(top_productos)
 
-# =====================================================
-# TOP PAÍSES
-# =====================================================
-
-st.subheader("🌎 Top Países Destino")
-
-top_paises = (
-    df.groupby("Pais")["Ton Netas Expo"]
-      .sum()
-      .sort_values(ascending=False)
-      .head(10)
-)
-
-st.bar_chart(top_paises)
-
-# =====================================================
+# ==========================
 # KPIs
-# =====================================================
+# ==========================
 
 st.divider()
 
-valor_total = df["Miles FOB Dol Expo"].sum()
+k1, k2, k3 = st.columns(3)
 
-ton_total = df["Ton Netas Expo"].sum()
+with k1:
+    st.metric(
+        "Productos",
+        len(productos)
+    )
 
-k1,k2,k3,k4 = st.columns(4)
+with k2:
+    st.metric(
+        "Países Destino",
+        len(paises)
+    )
 
-k1.metric(
-    "🌱 Productos",
-    len(productos)
-)
-
-k2.metric(
-    "🌍 Países",
-    len(paises)
-)
-
-k3.metric(
-    "🚚 Toneladas",
-    f"{ton_total:,.0f}"
-)
-
-k4.metric(
-    "💵 FOB Histórico",
-    f"USD {valor_total:,.0f}"
-)
-
-st.divider()
+with k3:
+    st.metric(
+        "Registros",
+        f"{len(df):,}"
+    )
 
 st.caption(
-    "Modelo de Inteligencia Artificial • DataRobot • Exportaciones Agrícolas Colombianas"
+    "Modelo desplegado en DataRobot | Machine Learning para Comercio Exterior y Exportaciones Agrícolas"
 )
