@@ -203,6 +203,9 @@ with c2:
         use_container_width=True
     )
 
+import requests
+import io
+
 # ==========================
 # PREDICCIÓN
 # ==========================
@@ -219,18 +222,46 @@ if generar:
             "Tradición productos": tradicion,
             "Fecha": fecha.strftime("%Y-%m-%d")
         }])
-prediccion = 0
 
-st.warning(
-    "Conexión a DataRobot pendiente de configurar."
-)
+        csv_data = input_df.to_csv(
+            index=False
+        )
 
-st.metric(
-    label="Valor FOB Estimado",
-    value="USD 0.00"
-)
+        headers = {
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "text/csv; charset=UTF-8",
+            "Accept": "text/csv"
+        }
 
-        st.success("Predicción generada exitosamente")
+        response = requests.post(
+            f"{ENDPOINT}/api/v2/deployments/{DEPLOYMENT_ID}/predictions",
+            headers=headers,
+            data=csv_data.encode("utf-8"),
+            timeout=120
+        )
+
+        response.raise_for_status()
+
+        resultado_df = pd.read_csv(
+            io.StringIO(response.text)
+        )
+
+        columnas_numericas = resultado_df.select_dtypes(
+            include=["number"]
+        ).columns
+
+        if len(columnas_numericas) == 0:
+            raise Exception(
+                "No se encontró ninguna columna numérica en la respuesta de DataRobot"
+            )
+
+        prediccion = float(
+            resultado_df[columnas_numericas[0]].iloc[0]
+        )
+
+        st.success(
+            "Predicción generada exitosamente"
+        )
 
         st.markdown("## 📈 Resultado")
 
@@ -239,12 +270,14 @@ st.metric(
             value=f"USD {prediccion:,.2f}"
         )
 
+        with st.expander("Ver respuesta completa de DataRobot"):
+            st.dataframe(resultado_df)
+
     except Exception as e:
 
         st.error(
-            f"Error al consultar el modelo: {e}"
+            f"Error al consultar DataRobot: {e}"
         )
-
 # ==========================
 # HISTÓRICOS
 # ==========================
