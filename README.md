@@ -1,0 +1,2 @@
+# Modelo-de-predicci-n-Valor-FOB-exportaciones-Colombia-
+modelo de Machine Learning capaz de predecir el valor FOB de las exportaciones agrícolas colombianas utilizando información histórica de productos, departamentos de origen, países de destino y volúmenes exportados. El modelo busca apoyar procesos de planeación comercial, análisis de mercados internacionales y toma de decisiones estratégicas.
