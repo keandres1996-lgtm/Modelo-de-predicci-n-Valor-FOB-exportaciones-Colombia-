@@ -10,7 +10,7 @@ from datetime import date
 # ==========================
 
 st.set_page_config(
-    page_title="Predicción de Exportaciones Agrícolas",
+    page_title="Modelo de Predicción Valor FOB Exportaciones Agrícolas Colombianas",
     page_icon="🌎",
     layout="wide"
 )
