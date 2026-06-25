@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import date
+import requests
+import io
 
 # ==========================
 # CONFIGURACIÓN DE PÁGINA
@@ -116,7 +118,7 @@ ENDPOINT = st.secrets["DATAROBOT_ENDPOINT"]
 # ENCABEZADO
 # ==========================
 
-st.title("🌱 Predicción Inteligente de Exportaciones Agrícolas")
+st.title("🌱 Predicción Valor FOB - Exportaciones Agrícolas")
 
 st.markdown("""
 Sistema de análisis predictivo para estimar el **Valor FOB Exportado**
@@ -159,11 +161,19 @@ with col2:
         step=1.0
     )
 
-    fecha = st.date_input(
-        "📅 Fecha estimada",
-        value=date.today()
-    )
+   mes = st.selectbox(
+    "📅 Mes",
+    list(range(1,13)),
+    index=date.today().month - 1
+)
 
+anio = st.selectbox(
+    "📆 Año",
+    [2024,2025,2026,2027],
+    index=2
+)
+
+fecha = date(anio, mes, 1)
 # ==========================
 # TRADICIÓN AUTOMÁTICA
 # ==========================
@@ -207,7 +217,7 @@ import requests
 import io
 
 # ==========================
-# PREDICCIÓN
+# PREDICCIÓN DATAROBOT
 # ==========================
 
 if generar:
@@ -223,9 +233,9 @@ if generar:
             "Fecha": fecha.strftime("%Y-%m-%d")
         }])
 
-        csv_data = input_df.to_csv(
-            index=False
-        )
+        csv_data = input_df.to_csv(index=False)
+
+        url = f"{ENDPOINT}/deployments/{DEPLOYMENT_ID}/predictions"
 
         headers = {
             "Authorization": f"Bearer {API_KEY}",
@@ -234,44 +244,90 @@ if generar:
         }
 
         response = requests.post(
-            f"{ENDPOINT}/api/v2/deployments/{DEPLOYMENT_ID}/predictions",
+            url,
             headers=headers,
-            data=csv_data.encode("utf-8"),
-            timeout=120
+            data=csv_data.encode("utf-8")
         )
 
-        response.raise_for_status()
+        if response.status_code != 200:
+            st.error(response.text)
+            st.stop()
 
         resultado_df = pd.read_csv(
             io.StringIO(response.text)
         )
 
-        columnas_numericas = resultado_df.select_dtypes(
-            include=["number"]
-        ).columns
+        columna_prediccion = resultado_df.columns[0]
 
-        if len(columnas_numericas) == 0:
-            raise Exception(
-                "No se encontró ninguna columna numérica en la respuesta de DataRobot"
-            )
-
-        prediccion = float(
-            resultado_df[columnas_numericas[0]].iloc[0]
+        prediccion_usd = float(
+            resultado_df[columna_prediccion].iloc[0]
         )
+
+        TRM = 4000
+
+        prediccion_cop = prediccion_usd * TRM
 
         st.success(
             "Predicción generada exitosamente"
         )
 
-        st.markdown("## 📈 Resultado")
+        st.markdown("<br>", unsafe_allow_html=True)
 
-        st.metric(
-            label="Valor FOB Estimado",
-            value=f"USD {prediccion:,.2f}"
-        )
+        col1, col2, col3 = st.columns(3)
 
-        with st.expander("Ver respuesta completa de DataRobot"):
-            st.dataframe(resultado_df)
+        with col1:
+
+            st.markdown(
+                f"""
+                <div style="
+                    background:#0F4C81;
+                    padding:25px;
+                    border-radius:15px;
+                    text-align:center;
+                    color:white;
+                ">
+                    <h4>💵 Valor FOB USD</h4>
+                    <h1>{prediccion_usd:,.2f}</h1>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with col2:
+
+            st.markdown(
+                f"""
+                <div style="
+                    background:#2E7D32;
+                    padding:25px;
+                    border-radius:15px;
+                    text-align:center;
+                    color:white;
+                ">
+                    <h4>🇨🇴 Valor FOB COP</h4>
+                    <h1>${prediccion_cop:,.0f}</h1>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with col3:
+
+            st.markdown(
+                f"""
+                <div style="
+                    background:#374151;
+                    padding:25px;
+                    border-radius:15px;
+                    text-align:center;
+                    color:white;
+                ">
+                    <h4>🌱 Tipo Producto</h4>
+                    <h2>{tradicion}</h2>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
     except Exception as e:
 
