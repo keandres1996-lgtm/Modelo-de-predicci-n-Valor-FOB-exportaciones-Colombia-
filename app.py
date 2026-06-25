@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import datarobot as dr
-from datarobot_predict.deployment import predict
 from datetime import date
 
 # ==========================
@@ -113,10 +111,6 @@ API_KEY = st.secrets["DATAROBOT_API_KEY"]
 DEPLOYMENT_ID = st.secrets["DATAROBOT_DEPLOYMENT_ID"]
 ENDPOINT = st.secrets["DATAROBOT_ENDPOINT"]
 
-dr.Client(
-    endpoint=ENDPOINT,
-    token=API_KEY
-)
 
 # ==========================
 # ENCABEZADO
@@ -225,15 +219,16 @@ if generar:
             "Tradición productos": tradicion,
             "Fecha": fecha.strftime("%Y-%m-%d")
         }])
+prediccion = 0
 
-        deployment = dr.Deployment.get(DEPLOYMENT_ID)
+st.warning(
+    "Conexión a DataRobot pendiente de configurar."
+)
 
-        resultado_df, _ = predict(
-            deployment=deployment,
-            data_frame=input_df
-        )
-
-        prediccion = float(resultado_df.iloc[0, 0])
+st.metric(
+    label="Valor FOB Estimado",
+    value="USD 0.00"
+)
 
         st.success("Predicción generada exitosamente")
 
