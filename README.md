@@ -15,89 +15,6 @@ El flujo completo es:
 3. DataRobot ejecuta el modelo XGBoost entrenado y devuelve las predicciones.
 4. Los resultados se muestran como tarjetas KPI, gráficos y tabla descargable, con opción de conversión a pesos colombianos (COP).
 
----
-
-## 🗂️ Estructura del proyecto
-
-```
-proyecto/
-│
-├── app.py                              # Aplicación principal Streamlit
-├── fecha_exportaciones_agricolas.csv   # Dataset histórico (MADR-OAI)
-├── requirements.txt                    # Dependencias Python
-└── .streamlit/
-    └── secrets.toml                    # Credenciales (NO subir a Git)
-```
-
----
-
-## ⚙️ Requisitos previos
-
-- Python **3.9** o superior
-- Cuenta activa en **DataRobot** con un deployment de predicción configurado
-- Acceso a la API de DataRobot (API Key)
-
----
-
-## 🚀 Instalación y ejecución local
-
-### 1. Clonar o descargar el proyecto
-
-```bash
-git clone https://github.com/tu-org/fob-exportaciones.git
-cd fob-exportaciones
-```
-
-### 2. Crear y activar un entorno virtual
-
-```bash
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# macOS / Linux
-source venv/bin/activate
-```
-
-### 3. Instalar dependencias
-
-```bash
-pip install -r requirements.txt
-```
-
-Contenido de `requirements.txt`:
-
-```
-streamlit>=1.35.0
-pandas>=2.0.0
-numpy>=1.25.0
-requests>=2.31.0
-```
-
-### 4. Configurar credenciales
-
-Crear el archivo `.streamlit/secrets.toml` (nunca incluir en control de versiones):
-
-```toml
-DATAROBOT_API_KEY       = "tu_api_key_aqui"
-DATAROBOT_DEPLOYMENT_ID = "id_del_deployment_aqui"
-DATAROBOT_ENDPOINT      = "https://app.datarobot.com"   # o tu instancia privada
-```
-
-### 5. Ubicar el dataset
-
-Copiar el archivo `fecha_exportaciones_agricolas.csv` en la **raíz del proyecto** (mismo directorio que `app.py`).
-
-### 6. Ejecutar la aplicación
-
-```bash
-streamlit run app.py
-```
-
-La app estará disponible en `http://localhost:8501`.
-
----
 
 ## 🗃️ Dataset de referencia
 
@@ -177,36 +94,6 @@ Cuando el toggle **"Mostrar también en pesos colombianos"** está activo:
 
 > Para obtener la TRM oficial del día consultar el Banco de la República: [https://www.banrep.gov.co/es/estadisticas/trm](https://www.banrep.gov.co/es/estadisticas/trm)
 
----
-
-## 🎨 Diseño y paleta de colores
-
-| Elemento | Color |
-|---|---|
-| Fondo principal | `#F0F4F8` gris claro institucional |
-| Sidebar | `#0B1F3A → #0F2D4A` azul marino corporativo |
-| Acentos / botones | `#2E86C1` azul ejecutivo |
-| KPI card — COP | `#2E7D32` verde sector agro |
-| Textos principales | `#0B1F3A` azul oscuro |
-| Fuente | Inter (Google Fonts) + fallback Segoe UI |
-
----
-
-## 🔒 Seguridad y buenas prácticas
-
-- Las credenciales de DataRobot se almacenan exclusivamente en `.streamlit/secrets.toml`.
-- Agregar `.streamlit/secrets.toml` al `.gitignore` antes de publicar el repositorio.
-- El dataset CSV **no debe contener datos personales** ni información sensible.
-- Para producción, considerar restringir el acceso a la app mediante autenticación de Streamlit Cloud o un proxy corporativo.
-
-Ejemplo de `.gitignore`:
-
-```
-.streamlit/secrets.toml
-venv/
-__pycache__/
-*.pyc
-```
 
 ---
 
@@ -231,25 +118,6 @@ __pycache__/
 | `❌ Error DataRobot: 404` | Deployment ID incorrecto | Confirmar el ID en el panel de DataRobot |
 | `Tiempo de espera agotado` | Job muy grande o red lenta | Reducir el número de meses o aumentar `TIMEOUT` en `app.py` |
 | Catálogos vacíos en selectbox | CSV con columnas renombradas | Verificar que los nombres de columna coincidan con los esperados |
-
----
-
-## 📦 Variables de entorno / secrets
-
-| Clave | Requerido | Descripción |
-|---|---|---|
-| `DATAROBOT_API_KEY` | ✅ Sí | Token de autenticación de la API de DataRobot |
-| `DATAROBOT_DEPLOYMENT_ID` | ✅ Sí | ID del deployment del modelo XGBoost |
-| `DATAROBOT_ENDPOINT` | Opcional | URL base de DataRobot (default: `https://app.datarobot.com`) |
-
----
-
-## 🤝 Contribuciones
-
-1. Hacer fork del repositorio.
-2. Crear una rama descriptiva: `git checkout -b feature/nueva-funcionalidad`.
-3. Hacer commit de los cambios: `git commit -m "feat: descripción del cambio"`.
-4. Abrir un Pull Request con descripción detallada.
 
 ---
 
